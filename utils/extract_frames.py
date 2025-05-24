@@ -3,19 +3,7 @@ import cv2
 from PIL import Image
 import argparse
 import shutil
-
-def resize(img, target_size=224):
-    # Resize keeping aspect ratio so longer side = target_size
-    w, h = img.size
-    if w > h:
-        new_w = target_size
-        new_h = int(h * target_size / w)
-    else:
-        new_h = target_size
-        new_w = int(w * target_size / h)
-
-    img = img.resize((new_w, new_h))
-    return img
+from utils.utils import resize
 
 def extract_frames(video_path, output_dir, interval_ms=300, target_size=224):
     """
