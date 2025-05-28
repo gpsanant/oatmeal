@@ -2,3 +2,6 @@ videos
 .DS_Store
 
 __pycache__/
+
+webcam
+prod
