@@ -123,6 +123,7 @@ def predict_directory(directory_path, model_path='models/overflow_detector_v1_wi
         if any(filename.lower().endswith(ext) for ext in image_extensions):
             image_paths.append(os.path.join(directory_path, filename))
     
+    image_paths.sort()
     print(f"Found {len(image_paths)} images in {directory_path}")
     return predict_multiple_images(image_paths, model_path)
 
@@ -134,18 +135,18 @@ if __name__ == "__main__":
     
     print("\n" + "="*80 + "\n")
     
-    image_paths = [
-        "prod/detection_20250524_172455_0081_off_0_449.jpg"
-    ]
-    results = predict_multiple_images(image_paths)
-    for path, pred, conf, probs, timing_info in results:
-        if pred:
-            print(f"{os.path.basename(path)}: {pred} ({conf:.3f})")
-            print(f"All probabilities: {dict(zip(['off', 'safe', 'unsafe'], probs))}")
-            print(f"Timing info: {timing_info}")
+    # image_paths = [
+    #     "detect/20250531_145223/96.jpg"
+    # ]
+    # results = predict_multiple_images(image_paths)
+    # for path, pred, conf, probs, timing_info in results:
+    #     if pred:
+    #         print(f"{os.path.basename(path)}: {pred} ({conf:.3f})")
+    #         print(f"All probabilities: {dict(zip(['off', 'safe', 'unsafe'], probs))}")
+    #         print(f"Timing info: {timing_info}")
     
-    # # Directory prediction
-    results = predict_directory("webcam")
+    # Directory prediction
+    results = predict_directory("detect/20250531_153942")
     for path, pred, conf, probs, timing_info in results:
         if pred:
             print(f"{os.path.basename(path)}: {pred} ({conf:.3f})")
