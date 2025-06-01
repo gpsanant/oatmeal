@@ -19,11 +19,12 @@ def find_iphone_camera():
     # Test camera indices (iPhone usually appears as index 1, 2, or 3)
     for camera_index in range(0, 10):
         cap = cv2.VideoCapture(camera_index)
+        
         if cap.isOpened():
             # Get camera name/info if possible
             width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
             height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            
+        
             # iPhone cameras typically have higher resolutions
             if width >= 1280 and height >= 720:
                 print(f"✓ Found high-resolution camera at index {camera_index} ({int(width)}x{int(height)})")
@@ -166,8 +167,6 @@ def perpetual_webcam_detection(output_dir=None,
             
             # Save image if requested
             if save_images and output_dir:
-                timestamp_file = datetime.now().strftime("%Y%m%d_%H%M%S")
-                confidence_str = f"{confidence:.3f}".replace('.', '_')
                 filename = os.path.join(
                     output_dir, 
                     f"{capture_count}.jpg"
@@ -255,9 +254,9 @@ if __name__ == "__main__":
     save_images = args.save
     output_dir = None
     if save_images:
-        # Create timestamped directory under /detect/
-        current_unix_time = int(time.time())
-        output_dir = f"/detect/{current_unix_time}"
+        # Create timestamped directory under detect/
+        timestamp_folder = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = f"detect/{timestamp_folder}"
     
     use_iphone = not args.no_iphone
     
