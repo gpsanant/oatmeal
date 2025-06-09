@@ -4,6 +4,7 @@ import os
 from PIL import Image
 from datetime import datetime
 import argparse
+import requests
 from overflow_detector import OverflowDetector
 
 def find_iphone_camera():
@@ -41,11 +42,35 @@ def find_iphone_camera():
     print("💡 Make sure your iPhone is connected and you've enabled camera sharing")
     return 0
 
+def trigger_move_sequence(server_url):
+    """Send a two-step move sequence to the actuator server.
+
+    This replicates the behaviour of the following shell command::
+
+        curl -X POST <server_url>/move -H "Content-Type: application/json" -d '{"pos":0.8}' && \
+        sleep 0.2 && \
+        curl -X POST <server_url>/move -H "Content-Type: application/json" -d '{"pos":-1}'
+
+    Args:
+        server_url (str): Base URL of the actuator server, e.g. ``http://g-raspberrypi.local:5000``.
+    """
+    endpoint = server_url.rstrip('/') + '/move'
+    try:
+        print(f"🚀 Sending move sequence to {endpoint}")
+        requests.post(endpoint, json={'pos': 0.8}, timeout=2)
+        time.sleep(0.2)
+        requests.post(endpoint, json={'pos': -1}, timeout=2)
+        print("✓ Move sequence complete")
+    except Exception as e:
+        print(f"❌ Failed to send move sequence: {e}")
+
 def perpetual_webcam_detection(output_dir=None, 
                              interval_milliseconds=1000, 
                              save_images=False,
                              model_path='models/overflow_detector_v1_with_backbone.pt',
-                             use_iphone=True):
+                             use_iphone=True,
+                             move=False,
+                             server_url='http://g-raspberrypi.local:5000'):
     """
     Perpetually capture images from webcam (preferably iPhone), resize them using utils.utils.resize,
     and run MobileNetV3 inference using the OverflowDetector class.
@@ -56,6 +81,7 @@ def perpetual_webcam_detection(output_dir=None,
         save_images: Whether to save captured images to disk
         model_path: Path to the trained model weights
         use_iphone: Whether to search for and use iPhone camera
+        server_url: Base URL of the actuator server for move commands
     """
     # Initialize overflow detector
     print("🔧 Initializing Overflow Detector...")
@@ -158,8 +184,22 @@ def perpetual_webcam_detection(output_dir=None,
             # Alert for unsafe conditions
             if predicted_class == 'unsafe' and confidence > 0.7:
                 print(f"  ⚠️  HIGH CONFIDENCE UNSAFE DETECTION! ⚠️")
+                if move:
+                    print(f"  🔄 Triggering move sequence")
+                    trigger_move_sequence(server_url)
+                    return
+                else:
+                    print(f"  🔄 Move sequence not triggered")
+                break
             elif predicted_class == 'unsafe':
                 print(f"  ⚠️  Unsafe condition detected")
+                if move:
+                    print(f"  🔄 Triggering move sequence")
+                    trigger_move_sequence(server_url)
+                    return
+                else:
+                    print(f"  🔄 Move sequence not triggered")
+                break
             elif predicted_class == 'safe':
                 print(f"  ✅ Safe condition")
             else:  # off
@@ -247,6 +287,11 @@ if __name__ == "__main__":
                         help='Path to the trained model weights')
     parser.add_argument('--no_iphone', action='store_true',
                         help='Use default camera instead of searching for iPhone')
+    parser.add_argument('--move', action='store_true',
+                        help='Trigger move sequence')
+    parser.add_argument('--server_url', type=str,
+                        default='http://g-raspberrypi.local:5000',
+                        help='Base URL for actuator server')
     
     args = parser.parse_args()
     
@@ -259,6 +304,7 @@ if __name__ == "__main__":
         output_dir = f"detect/{timestamp_folder}"
     
     use_iphone = not args.no_iphone
+    move = args.move
     
     print("🔍 Overflow Detection System")
     print("=" * 40)
@@ -276,5 +322,7 @@ if __name__ == "__main__":
         interval_milliseconds=args.interval,
         save_images=save_images,
         model_path=args.model_path,
-        use_iphone=use_iphone
+        use_iphone=use_iphone,
+        move=move,
+        server_url=args.server_url
     )
